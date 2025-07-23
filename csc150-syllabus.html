@@ -103,6 +103,31 @@
             padding: 0 2rem;
         }
 
+        .accordion-content.expanded {
+            max-height: 80vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .accordion-content.expanded::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .accordion-content.expanded::-webkit-scrollbar-track {
+            background: var(--gray-100);
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+
+        .accordion-content.expanded::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--school-blue) 0%, var(--school-blue-light) 100%);
+            border-radius: 4px;
+        }
+
+        .accordion-content.expanded::-webkit-scrollbar-thumb:hover {
+            background: var(--school-blue-dark);
+        }
+
         .accordion-button.active .accordion-icon {
             transform: rotate(45deg);
         }
@@ -328,7 +353,12 @@
                 max-height: none !important;
                 padding-bottom: 2rem !important;
                 display: block !important;
+                overflow: visible !important;
                 page-break-before: auto;
+            }
+            .accordion-content.expanded {
+                max-height: none !important;
+                overflow: visible !important;
             }
             .accordion-icon {
                 display: none;
@@ -1037,10 +1067,21 @@
                     button.classList.toggle('active');
                     button.setAttribute('aria-expanded', !isExpanded);
 
-                    if (content.style.maxHeight) {
+                    if (isExpanded) {
+                        // Collapsing
+                        content.classList.remove('expanded');
                         content.style.maxHeight = null;
                     } else {
-                        content.style.maxHeight = content.scrollHeight + "px";
+                        // Expanding
+                        content.classList.add('expanded');
+                        // For main sections (Part 1 and Part 2), use viewport height for scrolling
+                        if (button.id === 'part1-button' || button.id === 'part2-button') {
+                            content.style.maxHeight = '80vh';
+                        } else {
+                            // For individual weeks, calculate the actual content height
+                            const scrollHeight = content.scrollHeight;
+                            content.style.maxHeight = Math.min(scrollHeight, window.innerHeight * 0.6) + "px";
+                        }
                     }
                 });
             });
@@ -1078,7 +1119,9 @@
                 
                 // Temporarily expand all accordions for full content capture
                 allAccordions.forEach(content => {
-                    content.style.maxHeight = content.scrollHeight + 'px';
+                    content.classList.add('expanded');
+                    content.style.maxHeight = 'none';
+                    content.style.overflow = 'visible';
                 });
 
                 // Use html2canvas to capture the content
@@ -1124,7 +1167,15 @@
                     allAccordions.forEach(content => {
                         const button = content.previousElementSibling;
                         if (!button.classList.contains('active')) {
-                           content.style.maxHeight = null;
+                            content.classList.remove('expanded');
+                            content.style.maxHeight = null;
+                            content.style.overflow = 'hidden';
+                        } else {
+                            // Restore scrollable state for expanded sections
+                            if (button.id === 'part1-button' || button.id === 'part2-button') {
+                                content.style.maxHeight = '80vh';
+                                content.style.overflow = 'auto';
+                            }
                         }
                     });
                 }).catch(error => {
